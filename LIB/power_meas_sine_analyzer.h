@@ -224,7 +224,8 @@ static inline void POWER_MEAS_SINE_ANALYZER_run(POWER_MEAS_SINE_ANALYZER *v)
             //
             if(v->jitterCount<30)
             {
-                v->jitterCount++;
+                // 防止采样出现问题或者电网畸变引起的零交叉抖动干扰
+                // v->jitterCount++;
             }
             v->nSamples=0;
         }
