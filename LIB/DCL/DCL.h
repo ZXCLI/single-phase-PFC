@@ -177,8 +177,14 @@ static inline void DCL_restoreInts(int16_t v)
 
 #else
 #define DCL_DISABLE_INTS    0
-#define DCL_RESTORE_INTS(v) ;
-#warning "CPU not recognized.  Parameter updates may not be atomic."
+#define DCL_RESTORE_INTS(v) DCL_restoreInts(v); // 修改以适应非C28x平台
+// #warning "CPU not recognized.  Parameter updates may not be atomic."
+
+static inline void DCL_restoreInts(int16_t v)
+{
+    
+}
+
 #endif
 
 //--- Controller Common Support Structure ------------------------------------

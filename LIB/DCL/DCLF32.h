@@ -69,10 +69,11 @@ extern "C" {
 
 
 //--- Linear PID controller --------------------------------------------------
-
+#if defined(__TMS320C28XX__) || defined(__TMS320C28XX_CLA__)//修改以适应非C28x平台
 #pragma CODE_SECTION(DCL_updatePID,"dclfuncs")
 #pragma CODE_SECTION(DCL_runPID_C2,"dclfuncs")
 #pragma CODE_SECTION(DCL_runPID_C4,"dclfuncs")
+#endif
 
 //! \brief          Defines the DCL_PID shadow parameter set
 //!
@@ -435,12 +436,13 @@ extern float32_t DCL_runPID_C4(DCL_PID *p, float32_t rk, float32_t yk, float32_t
 
 
 //--- Linear PI controller ---------------------------------------------------
-
+#if defined(__TMS320C28XX__) || defined(__TMS320C28XX_CLA__) // 修改以适应非C28x平台
 #pragma CODE_SECTION(DCL_updatePI,"dclfuncs")
 #pragma CODE_SECTION(DCL_runPI_C2,"dclfuncs")
 #pragma CODE_SECTION(DCL_runPI_C3,"dclfuncs")
 #pragma CODE_SECTION(DCL_runPI_C5,"dclfuncs")
 #pragma CODE_SECTION(DCL_runPI_C6,"dclfuncs")
+#endif
 
 //! \brief          Defines the DCL_PI shadow parameter set
 //!
@@ -728,9 +730,10 @@ extern float32_t DCL_runPI_C7(DCL_PI *p, float32_t rk, float32_t yk);
 
 
 //--- Linear PI2 controller --------------------------------------------------
-
+#if defined(__TMS320C28XX__) || defined(__TMS320C28XX_CLA__) // 修改以适应非C28x平台
 #pragma CODE_SECTION(DCL_updatePI2,"dclfuncs")
 #pragma CODE_SECTION(DCL_runPI2_C1,"dclfuncs")
+#endif
 
 //! \brief          Defines the DCL_PI2 shadow parameter set
 //!
@@ -855,9 +858,10 @@ static inline float32_t DCL_runPI2_C1(DCL_PI2 *p, float32_t rk, float32_t yk)
 
 
 //--- Direct Form 1 - 1st order ----------------------------------------------
-
+#if defined(__TMS320C28XX__) || defined(__TMS320C28XX_CLA__) // 修改以适应非C28x平台
 #pragma CODE_SECTION(DCL_updateDF11,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF11_C2,"dclfuncs")
+#endif
 
 //! \brief          Defines the DCL_DF11 shadow parameter set
 //!
@@ -1009,11 +1013,12 @@ static inline float32_t DCL_runDF11_C2(DCL_DF11 *p, float32_t ek)
 
 
 //--- Direct Form 1 - 3rd order ----------------------------------------------
-
+#if defined(__TMS320C28XX__) || defined(__TMS320C28XX_CLA__) // 修改以适应非C28x平台
 #pragma CODE_SECTION(DCL_updateDF13,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF13_C4,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF13_C5,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF13_C6,"dclfuncs")
+#endif
 
 //! \brief          Defines the DCL_DF13 shadow parameter set
 //!
@@ -1241,11 +1246,12 @@ static inline float32_t DCL_runDF13_C6(DCL_DF13 *p, float32_t ek, float32_t uk)
 
 
 //--- Direct Form 2 - 2nd order ----------------------------------------------
-
+#if defined(__TMS320C28XX__) || defined(__TMS320C28XX_CLA__) // 修改以适应非C28x平台
 #pragma CODE_SECTION(DCL_updateDF22,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF22_C4,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF22_C5,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF22_C6,"dclfuncs")
+#endif
 
 //! \brief          Defines the DCL_DF22 shadow parameter set
 //!
@@ -1531,11 +1537,12 @@ static inline void DCL_runDF22_C6(DCL_DF22 *p, float32_t ek, float32_t uk)
 
 
 //--- Direct Form 2 - 3rd order ----------------------------------------------
-
+#if defined(__TMS320C28XX__) || defined(__TMS320C28XX_CLA__) // 修改以适应非C28x平台
 #pragma CODE_SECTION(DCL_updateDF23,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF23_C4,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF23_C5,"dclfuncs")
 #pragma CODE_SECTION(DCL_runDF23_C6,"dclfuncs")
+#endif
 
 //! \brief          Defines the DCL_DF23 shadow parameter set
 //!
@@ -1779,9 +1786,10 @@ static inline int16_t DCL_runClamp_C2(float32_t *data, float32_t Umax, float32_t
 }
 
 //--- Gain Scheduler Module --------------------------------------------------
-
+#if defined(__TMS320C28XX__) || defined(__TMS320C28XX_CLA__) // 修改以适应非C28x平台
 #pragma CODE_SECTION(DCL_updateGSM,"dclfuncs")
 #pragma CODE_SECTION(DCL_runGSM_C1,"dclfuncs")
+#endif
 
 //! \brief          Number of piecewise linear sections
 //!
