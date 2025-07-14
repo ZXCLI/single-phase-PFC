@@ -8,4 +8,6 @@
 #define PFC_SPLL_COEFF_K1 ((float32_t)0.00188141f)
 #define PFC_SPLL_COEFF_K2 ((float32_t) - 0.99623717f)
 
+#define PFC_LAB 5
+
 #endif

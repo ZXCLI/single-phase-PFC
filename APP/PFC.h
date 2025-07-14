@@ -5,9 +5,55 @@
 #include "PFC_parameter.h"
 #include "PFC_HAL.h"
 #include "DCLF32.h"
+#include "SPLL_1PH_SOGI.h"
 
 #define PFC_GV DCL_PI
 #define PFC_GI DCL_DF22
+#define PFC_GI_ControllerCoeff computeDF22_PRcontrollerCoeff
+#define PFC_vDC_NotchFltrCoeff computeDF22_NotchFltrCoeff
+
+extern SPLL_1PH_SOGI PFC_PLL;
+
+// 电网参数
+extern float PFC_Vac_frequency;
+
+// 归一化测量值
+extern float PFC_iAC_sensed_pu;
+extern float PFC_vAC_sensed_pu;
+extern float PFC_vDC_sensed_pu;
+extern float PFC_iDC_sensed_pu;
+
+// 实际值
+extern float PFC_iAC_sensed;
+extern float PFC_vAC_sensed;
+extern float PFC_vDC_sensed;
+extern float PFC_iDC_sensed;
+
+extern float PFC_vDC_Ref_pu; // 直流侧电压参考值
+extern float PFC_iAC_Ref_pu; // 交流侧电流参考值，流入为正
+
+extern float PFC_Duty_pu; // 占空比
+
+// 系统状态以及保护
+extern volatile int32_t PFC_closeGVloop;
+extern volatile int32_t PFC_closeGIloop;
+extern volatile int32_t PFC_enable_gate;
+
+// ZCD检测
+extern volatile float PFC_Vac;
+extern volatile float PFC_Vac_prev;
+extern volatile uint16_t PFC_EDGE_POS;   // 电压处于上升阶段
+
+// 控制器参数
+extern PFC_GI pfc_gi;
+extern PFC_GV pfc_gv;
+extern float PFC_iAC_loop_err;
+
+extern volatile uint16_t PFC_updateDutyflag;
+extern volatile uint16_t PFC_startupflag;
+
+extern float PFC_vAC_sensed_Filtered;   // 交流侧电压滤波值
+extern uint16_t PFC_vAC_POS;            // 交流侧电压极性
 
 void PFC_GlobalVariablesInit(void);
 void PFC_Init(void);
@@ -61,5 +107,89 @@ static inline void computeDF22_NotchFltrCoeff(DCL_DF22 *v, float32_t Fs, float32
     v->a1 = (-8.0f * Fs * Fs + 2.0f * wn2 * wn2) * temp2;
     v->a2 = (4.0f * Fs * Fs - 4.0f * wn2 * c1 * Fs + wn2 * wn2) * temp2;
 }
+
+
+
+inline void isr_lab1(void)
+{
+    // 正向过零检测
+    PFC_Vac = PFC_vAC_sensed_pu;
+    if (PFC_Vac - PFC_Vac_prev > 0.04f) {
+        PFC_EDGE_POS = 1;
+    } else {
+        PFC_EDGE_POS = 0;
+    }
+    PFC_Vac = PFC_Vac_prev;
+}
+
+inline void isr_lab2(void)
+{
+    
+}
+
+inline void isr_lab3(void)
+{
+    
+}
+
+inline void isr_lab4(void)
+{
+    
+}
+
+inline void isr_lab5(void) 
+{
+    // 电压上升检测
+    PFC_Vac = PFC_vAC_sensed_Filtered;
+    if (PFC_Vac - PFC_Vac_prev > 0.04f) {
+        PFC_EDGE_POS = 1;
+    } else {
+        PFC_EDGE_POS = 0;
+    }
+    PFC_Vac = PFC_Vac_prev;
+
+    if(PFC_startupflag == 1) {
+
+        // 等待过零点
+        if((PFC_vAC_sensed_Filtered > -0.01f) &&
+           (PFC_vAC_sensed_Filtered < 0.01f) &&
+           (PFC_EDGE_POS == 1)) // 仅在第一次进入时生效
+        {
+            PFC_updateDutyflag = 1;
+            PFC_vAC_POS = 1;
+        }
+
+        if(PFC_updateDutyflag == 1) {
+            // 电压环
+
+            // 电流环
+
+            PFC_PWM_UpdateDuty();
+        }
+    }
+
+
+
+}
+
+static inline void PFC_isr(void)
+{
+    PFC_ADC_Read();
+    SPLL_1PH_SOGI_run(&PFC_PLL,PFC_vAC_sensed_pu);
+
+#if PFC_LAB == 1
+    isr_lab1();
+#elif PFC_LAB == 2
+    isr_lab2();
+#elif PFC_LAB == 3
+    isr_lab3();
+#elif PFC_LAB == 4
+    isr_lab4();
+#elif PFC_LAB == 5
+    isr_lab5();
+#endif
+}
+
+
 
 #endif
