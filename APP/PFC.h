@@ -6,6 +6,7 @@
 #include "PFC_HAL.h"
 #include "DCLF32.h"
 #include "SPLL_1PH_SOGI.h"
+#include "PFC_parameter.h"
 
 #define PFC_GV DCL_PI
 #define PFC_GI DCL_DF22
@@ -47,15 +48,17 @@ extern volatile uint16_t PFC_EDGE_POS;   // 电压处于上升阶段
 // 控制器参数
 extern PFC_GI pfc_gi;
 extern PFC_GV pfc_gv;
+extern float PFC_vDC_loop_err;
 extern float PFC_iAC_loop_err;
 
 extern volatile uint16_t PFC_updateDutyflag;
 extern volatile uint16_t PFC_startupflag;
 
 extern float PFC_vAC_sensed_Filtered;   // 交流侧电压滤波值
+extern float PFC_vDC_sensed_pu_NOTCH;
 extern uint16_t PFC_vAC_POS;            // 交流侧电压极性
 
-void PFC_GlobalVariablesInit(void);
+void PFC_initGlobalVariables(void);
 void PFC_Init(void);
 
 ////////////////Notch filter and PR controllers//////////
@@ -134,11 +137,23 @@ inline void isr_lab3(void)
 
 inline void isr_lab4(void)
 {
-    
+    SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
+
+    // 电压上升检测
+    PFC_Vac = PFC_vAC_sensed_Filtered;
+    if (PFC_Vac - PFC_Vac_prev > 0.04f) {
+        PFC_EDGE_POS = 1;
+    } else {
+        PFC_EDGE_POS = 0;
+    }
+    PFC_Vac = PFC_Vac_prev;
 }
 
-inline void isr_lab5(void) 
+static inline void isr_lab5(void) 
 {
+
+    SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
+
     // 电压上升检测
     PFC_Vac = PFC_vAC_sensed_Filtered;
     if (PFC_Vac - PFC_Vac_prev > 0.04f) {
@@ -148,34 +163,35 @@ inline void isr_lab5(void)
     }
     PFC_Vac = PFC_Vac_prev;
 
-    if(PFC_startupflag == 1) {
+    if(PFC_startupflag == 1) {  // 准备启动阶段
 
         // 等待过零点
         if((PFC_vAC_sensed_Filtered > -0.01f) &&
            (PFC_vAC_sensed_Filtered < 0.01f) &&
            (PFC_EDGE_POS == 1)) // 仅在第一次进入时生效
         {
-            PFC_updateDutyflag = 1;
-            PFC_vAC_POS = 1;
-        }
-
-        if(PFC_updateDutyflag == 1) {
-            // 电压环
-
-            // 电流环
-
-            PFC_PWM_UpdateDuty();
+            PFC_updateDutyflag = 1; // 启动
+            PFC_vAC_POS = 1;        // 正半周期
         }
     }
 
+    if (PFC_updateDutyflag == 1) {
 
+        // 电压环
+        PFC_vDC_loop_err = PFC_vDC_Ref_pu - PFC_vDC_sensed_pu_NOTCH;
+        PFC_iAC_Ref_pu = PFC_GV_RUN(&pfc_gv, PFC_vDC_loop_err,0);
 
+        // 电流环
+        PFC_iAC_loop_err = PFC_iAC_Ref_pu - PFC_iAC_sensed_pu;
+        PFC_Duty_pu = PFC_GI_RUN(&pfc_gi, PFC_iAC_loop_err);
+
+        PFC_PWM_UpdateDuty();
+    }
 }
 
 static inline void PFC_isr(void)
 {
     PFC_ADC_Read();
-    SPLL_1PH_SOGI_run(&PFC_PLL,PFC_vAC_sensed_pu);
 
 #if PFC_LAB == 1
     isr_lab1();

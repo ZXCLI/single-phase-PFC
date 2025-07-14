@@ -42,12 +42,15 @@ volatile int32_t PFC_ZCD;
 // 控制器参数
 PFC_GI pfc_gi;
 PFC_GV pfc_gv;
+float PFC_vDC_loop_err;
 float PFC_iAC_loop_err;
 
 volatile uint16_t PFC_updateDutyflag;
 volatile uint16_t PFC_startupflag;
 
-float PFC_vAC_sensed_Filtered;
+float PFC_vAC_sensed_Filtered;   // 交流侧电压滤波值
+float PFC_vDC_sensed_pu_NOTCH;
+uint16_t PFC_vAC_POS;            // 交流侧电压极性
 
 void PFC_initGlobalVariables(void)
 {

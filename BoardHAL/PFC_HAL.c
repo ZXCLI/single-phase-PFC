@@ -15,5 +15,10 @@ void PFC_PWM_UpdateDuty(void)
 
 void PFC_ADC_Read(void)
 {
+    // 读取注入组的ADC值
+
+
+
+    // 适当的滤波
     
 }

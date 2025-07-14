@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "PFC.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,7 +89,7 @@ int main(void)
   MX_GPIO_Init();
   MX_HRTIM1_Init();
   /* USER CODE BEGIN 2 */
-
+  PFC_initGlobalVariables();
   /* USER CODE END 2 */
 
   /* Infinite loop */
