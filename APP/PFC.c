@@ -4,6 +4,7 @@
 #include "spll_1ph_sogi.h"
 #include "DCLF32.h"
 #include "rampgen.h"
+#include "power_meas_sine_analyzer.h"
 
 
 SPLL_1PH_SOGI PFC_PLL;
@@ -22,15 +23,10 @@ float PFC_vAC_offset_pu;
 float PFC_vDC_offset_pu;
 float PFC_iDC_offset_pu;
 // 实际值
-__IO float PFC_iAC_sensed;
+float PFC_iAC_sensed;
 float PFC_vAC_sensed;
 float PFC_vDC_sensed;
 float PFC_iDC_sensed;
-
-float PFC_vDC_Ref_pu;   //直流侧电压参考值
-float PFC_iAC_Ref_pu;   //交流侧电流参考值，流入为正
-
-float PFC_Duty_pu;      //占空比
 
 // 系统状态以及保护
 volatile int32_t PFC_closeGVloop;
@@ -53,6 +49,12 @@ float PFC_GI_iAC_out;
 volatile uint16_t PFC_updateDutyflag;   // 开始发波
 volatile uint16_t PFC_startupflag;      // 开机
 
+float PFC_vDC_Ref_pu; // 直流侧电压参考值
+float PFC_vDC_RefSlewed_pu;
+float PFC_iAC_Ref_pu; // 交流侧电流参考值，流入为正
+
+float PFC_Duty_pu; // 占空比
+
 // 陷波器
 PFC_NOTCH VDC_NOTCH_FILTER;
 
@@ -61,6 +63,9 @@ float PFC_vDC_sensed_pu_Filtered;   // 直流侧电压滤波值
 float PFC_vDC_sensed_pu_NOTCH;
 float PFC_iDC_sensed_pu_Filtered;   // 直流侧电流滤波值
 uint16_t PFC_vAC_POS;            // 交流侧电压极性
+
+// power measture
+POWER_MEAS_SINE_ANALYZER PFC_PowerMeas;
 
 void PFC_initGlobalVariables(void)
 {
@@ -71,6 +76,7 @@ void PFC_initGlobalVariables(void)
     PFC_startupflag = 0;
 
     PFC_ac_frequency = AC_FREQUENCY;
+
     // 初始化锁相环参数
     SPLL_1PH_SOGI_reset(&PFC_PLL);
     SPLL_1PH_SOGI_config(&PFC_PLL,
@@ -80,6 +86,15 @@ void PFC_initGlobalVariables(void)
                           PFC_SPLL_COEFF_B1
                         );
     SPLL_1PH_SOGI_coeff_calc(&PFC_PLL);
+
+    // 功率测量库
+    POWER_MEAS_SINE_ANALYZER_reset(&PFC_PowerMeas);
+    POWER_MEAS_SINE_ANALYZER_config(&PFC_PowerMeas,
+                                      ISR_FREQUENCY,
+                                      0.0001f,
+                                      48,
+                                      52
+                                    );
 
     // 初始化环路参数
     PFC_iAC_sensed_pu = 0.0f;
@@ -103,12 +118,12 @@ void PFC_initGlobalVariables(void)
     pfc_gv.Kp = 0.0f;
     pfc_gv.Ki = 0.0f;
     pfc_gv.Umax = 0.95f;
-    pfc_gv.Umin = 0.05f;
+    pfc_gv.Umin = 0.0f;
 
     // 初始化电流控制器参数
     PFC_GI_ControllerCoeff(&pfc_gi,
-                           0.0f,
-                           0.0f,
+                           0.0f,    // kp
+                           0.0f,    // ki
                            AC_FREQUENCY * 2.0f * CONST_PI_32,
                            ISR_FREQUENCY,
                            0.15f);

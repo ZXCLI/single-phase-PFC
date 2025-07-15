@@ -7,6 +7,7 @@
 #include "DCLF32.h"
 #include "SPLL_1PH_SOGI.h"
 #include "PFC_parameter.h"
+#include "power_meas_sine_analyzer.h"
 
 #define PFC_GV DCL_PI
 #define PFC_GI DCL_DF22
@@ -33,15 +34,10 @@ extern float PFC_vDC_offset_pu;
 extern float PFC_iDC_offset_pu;
 
 // 实际值
-extern __IO float PFC_iAC_sensed;
+extern float PFC_iAC_sensed;
 extern float PFC_vAC_sensed;
 extern float PFC_vDC_sensed;
 extern float PFC_iDC_sensed;
-
-extern float PFC_vDC_Ref_pu; // 直流侧电压参考值
-extern float PFC_iAC_Ref_pu; // 交流侧电流参考值，流入为正
-
-extern float PFC_Duty_pu; // 占空比
 
 // 系统状态以及保护
 extern volatile int32_t PFC_closeGVloop;
@@ -64,6 +60,11 @@ extern float PFC_GI_iAC_out;
 extern volatile uint16_t PFC_updateDutyflag;
 extern volatile uint16_t PFC_startupflag;
 
+extern float PFC_vDC_Ref_pu; // 直流侧电压参考值
+extern float PFC_vDC_RefSlewed_pu;
+extern float PFC_iAC_Ref_pu; // 交流侧电流参考值，流入为正
+
+extern float PFC_Duty_pu; // 占空比
 
 extern PFC_NOTCH VDC_NOTCH_FILTER;
 extern float PFC_vAC_sensed_pu_Filtered; // 交流侧电压滤波值
@@ -71,6 +72,8 @@ extern float PFC_vDC_sensed_pu_Filtered; // 直流侧电压滤波值
 extern float PFC_vDC_sensed_pu_NOTCH;
 extern float PFC_iDC_sensed_pu_Filtered;
 extern uint16_t PFC_vAC_POS;            // 交流侧电压极性
+
+extern POWER_MEAS_SINE_ANALYZER PFC_PowerMeas;
 
 void PFC_initGlobalVariables(void);
 
@@ -126,7 +129,7 @@ static inline void computeDF22_NotchFltrCoeff(DCL_DF22 *v, float32_t Fs, float32
 
 static inline void PFC_readCurrentAndVoltageSignals(void)
 {
-    // 读取注入组的ADC值
+    // 读取注入组的ADC值，然后归一化
     PFC_vAC_sensed_pu = (PFC_VAC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_vAC_offset_pu) * 2.0f;
     PFC_iAC_sensed_pu = (PFC_VAC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu) * 2.0f;
     PFC_vDC_sensed_pu = (PFC_VDC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu);
@@ -200,6 +203,11 @@ static inline void isr_lab5(void)
 
     SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
 
+    //power measurement
+    PFC_PowerMeas.v = PFC_vAC_sensed_pu;
+    PFC_PowerMeas.i = PFC_iAC_sensed_pu;
+    POWER_MEAS_SINE_ANALYZER_run(&PFC_PowerMeas);
+
     // 电压上升检测
     PFC_Vac = PFC_vAC_sensed_pu_Filtered;
     if (PFC_Vac - PFC_Vac_prev > 0.04f) {
@@ -226,8 +234,21 @@ static inline void isr_lab5(void)
     if (PFC_updateDutyflag == 1) {
 
         // 电压环
-        PFC_vDC_loop_err = PFC_vDC_Ref_pu - PFC_vDC_sensed_pu_NOTCH;
+        // 斜坡控制
+        float stepMaxChange_pu = (PFC_VOLTS_PER_SECOND_SLEW / PFC_VDC_MAX) *
+                                 (1.0f / (float)ISR_FREQUENCY);
+        
+        if((PFC_vDC_Ref_pu - PFC_vDC_sensed_pu_NOTCH) > (2.0f * stepMaxChange_pu)){
+            PFC_vDC_RefSlewed_pu += stepMaxChange_pu;
+        }else if((PFC_vDC_Ref_pu - PFC_vDC_sensed_pu_NOTCH) < (-2.0f * stepMaxChange_pu)){
+            PFC_vDC_RefSlewed_pu -= stepMaxChange_pu;
+        }else{
+            PFC_vDC_RefSlewed_pu = PFC_vDC_Ref_pu;
+        }
+        // 运行电压环
+        PFC_vDC_loop_err = PFC_vDC_RefSlewed_pu - PFC_vDC_sensed_pu_NOTCH;
         PFC_GV_vDC_out = PFC_GV_RUN(&pfc_gv, PFC_vDC_loop_err,0);
+        // 注意，这里的正负关系请自行根据硬件修改
         PFC_iAC_Ref_pu = PFC_GV_vDC_out * PFC_PLL.sine;
 
         // 电流环

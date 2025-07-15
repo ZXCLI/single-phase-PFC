@@ -19,6 +19,8 @@
 #define PFC_IAC_RMS_OVERVOLT_LIMIT ((float32_t)12.0f)
 #define PFC_VAC_RMS_UNDERVOLT_LIMIT ((float32_t)20.0f)
 
+#define PFC_VOLTS_PER_SECOND_SLEW ((float32_t)15.0f)
+
 // ADC的缩放系数
 #define PFC_ADC_PU_SCALE_FACTOR ((float32_t)(1.0f / (1 << 12))) // 12bit
 
