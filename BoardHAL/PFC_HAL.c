@@ -42,22 +42,6 @@ void PFC_HAL_setupADC(void)
     LL_ADC_EnableIT_JEOS(ADC2);
 }
 
-void PFC_ADC_Read(void)
-{
-    // 读取注入组的ADC值
-    PFC_vAC_sensed_pu = (PFC_VAC_READ * PFC_ADC_PU_SCALE_FACTOR
-                         - PFC_vAC_offset_pu) * 2.0f;
-    PFC_iAC_sensed_pu = (PFC_VAC_READ * PFC_ADC_PU_SCALE_FACTOR
-                         - PFC_iAC_offset_pu) * 2.0f;
-    PFC_vDC_sensed_pu = (PFC_VDC_READ * PFC_ADC_PU_SCALE_FACTOR
-                         - PFC_iAC_offset_pu);
-    PFC_iDC_sensed_pu = (PFC_iDC_sensed_pu * PFC_ADC_PU_SCALE_FACTOR
-                         - PFC_iAC_offset_pu) * 2.0f;
-
-    // 适当的滤波
-    
-}
-
 void PFC_HAL_setupPWM(void)
 {
     // 设置COMP1

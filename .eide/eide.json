@@ -14,6 +14,9 @@
     "files": [
       {
         "path": "startup_stm32g474xx.s"
+      },
+      {
+        "path": "LIB/DCL/DCL_DF22_C1.s"
       }
     ],
     "folders": []
@@ -26,7 +29,9 @@
   },
   "targets": {
     "Debug": {
-      "excludeList": [],
+      "excludeList": [
+        "<virtual_root>/DCL_DF22_C1.asm"
+      ],
       "toolchain": "GCC",
       "compileConfig": {
         "cpuType": "Cortex-M4",
@@ -88,7 +93,7 @@
           "c/cpp-compiler": {
             "language-c": "c11",
             "language-cpp": "c++11",
-            "optimization": "level-debug",
+            "optimization": "level-1",
             "warnings": "all-warnings",
             "one-elf-section-per-function": true,
             "one-elf-section-per-data": true

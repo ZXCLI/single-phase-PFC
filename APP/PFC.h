@@ -10,8 +10,11 @@
 
 #define PFC_GV DCL_PI
 #define PFC_GI DCL_DF22
+#define PFC_NOTCH DCL_DF22
 #define PFC_GI_ControllerCoeff computeDF22_PRcontrollerCoeff
 #define PFC_vDC_NotchFltrCoeff computeDF22_NotchFltrCoeff
+
+#define PFC_EMAVG_MACRO(in, out, multiplier) out = ((out - in) * multiplier) + in;
 
 extern SPLL_1PH_SOGI PFC_PLL;
 
@@ -61,13 +64,15 @@ extern float PFC_GI_iAC_out;
 extern volatile uint16_t PFC_updateDutyflag;
 extern volatile uint16_t PFC_startupflag;
 
-extern float PFC_vAC_sensed_Filtered;   // 交流侧电压滤波值
+
+extern PFC_NOTCH VDC_NOTCH_FILTER;
+extern float PFC_vAC_sensed_pu_Filtered; // 交流侧电压滤波值
+extern float PFC_vDC_sensed_pu_Filtered; // 直流侧电压滤波值
 extern float PFC_vDC_sensed_pu_NOTCH;
+extern float PFC_iDC_sensed_pu_Filtered;
 extern uint16_t PFC_vAC_POS;            // 交流侧电压极性
 
 void PFC_initGlobalVariables(void);
-void PFC_Init(void);
-void PFC_checkOverFlow(void);
 
 ////////////////Notch filter and PR controllers//////////
 
@@ -119,7 +124,40 @@ static inline void computeDF22_NotchFltrCoeff(DCL_DF22 *v, float32_t Fs, float32
     v->a2 = (4.0f * Fs * Fs - 4.0f * wn2 * c1 * Fs + wn2 * wn2) * temp2;
 }
 
+static inline void PFC_readCurrentAndVoltageSignals(void)
+{
+    // 读取注入组的ADC值
+    PFC_vAC_sensed_pu = (PFC_VAC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_vAC_offset_pu) * 2.0f;
+    PFC_iAC_sensed_pu = (PFC_VAC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu) * 2.0f;
+    PFC_vDC_sensed_pu = (PFC_VDC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu);
+    PFC_iDC_sensed_pu = (PFC_iDC_sensed_pu * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu) * 2.0f;
 
+    // 适当的滤波
+    // 低通滤波
+    PFC_vAC_sensed_pu_Filtered += PFC_AC_FILTER_CONSTANT *
+                                  (PFC_vAC_sensed_pu -
+                                   PFC_vAC_sensed_pu_Filtered);
+    PFC_vDC_sensed_pu_Filtered += PFC_DC_FILTER_CONSTANT *
+                                  (PFC_vDC_sensed_pu -
+                                   PFC_vDC_sensed_pu_Filtered);
+
+    // 陷波器
+    PFC_vDC_sensed_pu_NOTCH = PFC_NOTCH_RUN(&VDC_NOTCH_FILTER,
+                                            PFC_vDC_sensed_pu_Filtered);
+}
+
+static inline void PFC_checkOverFlow(void)
+{
+    PFC_EMAVG_MACRO(PFC_iDC_sensed_pu, PFC_iDC_sensed_pu_Filtered, 0.80f)
+
+    PFC_vDC_sensed = PFC_vDC_sensed_pu_NOTCH * PFC_VDC_MAX;
+    PFC_iDC_sensed = PFC_iDC_sensed_pu_Filtered * PFC_IDC_MAX;
+    
+    if(PFC_vDC_sensed > PFC_VDC_OVERVOLT_LIMIT)
+    {
+        
+    }
+}
 
 inline void isr_lab1(void)
 {
@@ -148,7 +186,7 @@ static inline void isr_lab4(void)
     SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
 
     // 电压上升检测
-    PFC_Vac = PFC_vAC_sensed_Filtered;
+    PFC_Vac = PFC_vAC_sensed_pu_Filtered;
     if (PFC_Vac - PFC_Vac_prev > 0.04f) {
         PFC_EDGE_POS = 1;
     } else {
@@ -163,7 +201,7 @@ static inline void isr_lab5(void)
     SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
 
     // 电压上升检测
-    PFC_Vac = PFC_vAC_sensed_Filtered;
+    PFC_Vac = PFC_vAC_sensed_pu_Filtered;
     if (PFC_Vac - PFC_Vac_prev > 0.04f) {
         PFC_EDGE_POS = 1;
     } else {
@@ -175,8 +213,8 @@ static inline void isr_lab5(void)
     if(PFC_startupflag == 1) {  
 
         // 等待过零点
-        if((PFC_vAC_sensed_Filtered > -0.01f) &&
-           (PFC_vAC_sensed_Filtered < 0.01f) &&
+        if((PFC_vAC_sensed_pu_Filtered > -0.01f) &&
+           (PFC_vAC_sensed_pu_Filtered < 0.01f) &&
            (PFC_EDGE_POS == 1)) // 仅在第一次进入时生效
         {
             PFC_updateDutyflag = 1; // 启动
@@ -202,12 +240,12 @@ static inline void isr_lab5(void)
         PFC_PWM_UpdateDuty();
     }
     
-    //PFC_checkOverFlow();    // 检测溢出或掉电
+    PFC_checkOverFlow();    // 检测溢出或掉电
 }
 
 static inline void PFC_isr(void)
 {
-    PFC_ADC_Read();
+    PFC_readCurrentAndVoltageSignals();
 
 #if PFC_LAB == 1
     isr_lab1();

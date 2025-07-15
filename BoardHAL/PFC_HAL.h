@@ -12,7 +12,6 @@
 #define PFC_VDC_READ (float)LL_ADC_INJ_ReadConversionData12(ADC1, LL_ADC_INJ_RANK_1)
 
 void PFC_PWM_UpdateDuty(void);
-void PFC_ADC_Read(void);
 void PFC_HAL_setupADC(void);
 void PFC_HAL_setupPWM(void);
 

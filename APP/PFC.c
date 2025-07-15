@@ -53,8 +53,13 @@ float PFC_GI_iAC_out;
 volatile uint16_t PFC_updateDutyflag;   // 开始发波
 volatile uint16_t PFC_startupflag;      // 开机
 
-float PFC_vAC_sensed_Filtered;   // 交流侧电压滤波值
+// 陷波器
+PFC_NOTCH VDC_NOTCH_FILTER;
+
+float PFC_vAC_sensed_pu_Filtered;   // 交流侧电压滤波值
+float PFC_vDC_sensed_pu_Filtered;   // 直流侧电压滤波值
 float PFC_vDC_sensed_pu_NOTCH;
+float PFC_iDC_sensed_pu_Filtered;   // 直流侧电流滤波值
 uint16_t PFC_vAC_POS;            // 交流侧电压极性
 
 void PFC_initGlobalVariables(void)
@@ -107,4 +112,11 @@ void PFC_initGlobalVariables(void)
                            AC_FREQUENCY * 2.0f * CONST_PI_32,
                            ISR_FREQUENCY,
                            0.15f);
+
+    // 初始化陷波器
+    PFC_vDC_NotchFltrCoeff(&VDC_NOTCH_FILTER,
+                           ISR_FREQUENCY,
+                           2.0f * AC_FREQUENCY,
+                           0.25f,
+                           0.00001f);
 }
