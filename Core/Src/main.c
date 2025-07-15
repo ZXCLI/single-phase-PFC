@@ -18,12 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "hrtim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "PFC.h"
+uint32_t test = 1;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -87,9 +89,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_ADC1_Init();
   MX_HRTIM1_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
   PFC_initGlobalVariables();
+  PFC_HAL_setupADC();
+  PFC_HAL_setupPWM();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,6 +106,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
+    
+    // LL_HRTIM_TIM_SetCompare1(HRTIM1, LL_HRTIM_TIMER_C, test);
+    // test++;
+    // if (test > 24980) test = 1;
+    // HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }

@@ -16,8 +16,13 @@ float PFC_iAC_sensed_pu;
 float PFC_vAC_sensed_pu;
 float PFC_vDC_sensed_pu;
 float PFC_iDC_sensed_pu;
+
+float PFC_iAC_offset_pu;
+float PFC_vAC_offset_pu;
+float PFC_vDC_offset_pu;
+float PFC_iDC_offset_pu;
 // 实际值
-float PFC_iAC_sensed;
+__IO float PFC_iAC_sensed;
 float PFC_vAC_sensed;
 float PFC_vDC_sensed;
 float PFC_iDC_sensed;
@@ -33,20 +38,20 @@ volatile int32_t PFC_closeGIloop;
 volatile int32_t PFC_enable_gate;
 
 // ZCD检测
-volatile float PFC_ac_sine;
-volatile float PFC_ac_cosine;
-volatile float PFC_ac_sine_prev;
-volatile float PFC_ac_cosine_prev;
-volatile int32_t PFC_ZCD;
+volatile float PFC_Vac;
+volatile float PFC_Vac_prev;
+volatile uint16_t PFC_EDGE_POS; // 电压处于上升阶段
 
 // 控制器参数
 PFC_GI pfc_gi;
 PFC_GV pfc_gv;
 float PFC_vDC_loop_err;
 float PFC_iAC_loop_err;
+float PFC_GV_vDC_out;
+float PFC_GI_iAC_out;
 
-volatile uint16_t PFC_updateDutyflag;
-volatile uint16_t PFC_startupflag;
+volatile uint16_t PFC_updateDutyflag;   // 开始发波
+volatile uint16_t PFC_startupflag;      // 开机
 
 float PFC_vAC_sensed_Filtered;   // 交流侧电压滤波值
 float PFC_vDC_sensed_pu_NOTCH;

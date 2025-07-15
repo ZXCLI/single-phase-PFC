@@ -24,8 +24,13 @@ extern float PFC_vAC_sensed_pu;
 extern float PFC_vDC_sensed_pu;
 extern float PFC_iDC_sensed_pu;
 
+extern float PFC_iAC_offset_pu;
+extern float PFC_vAC_offset_pu;
+extern float PFC_vDC_offset_pu;
+extern float PFC_iDC_offset_pu;
+
 // 实际值
-extern float PFC_iAC_sensed;
+extern __IO float PFC_iAC_sensed;
 extern float PFC_vAC_sensed;
 extern float PFC_vDC_sensed;
 extern float PFC_iDC_sensed;
@@ -50,6 +55,8 @@ extern PFC_GI pfc_gi;
 extern PFC_GV pfc_gv;
 extern float PFC_vDC_loop_err;
 extern float PFC_iAC_loop_err;
+extern float PFC_GV_vDC_out;
+extern float PFC_GI_iAC_out;
 
 extern volatile uint16_t PFC_updateDutyflag;
 extern volatile uint16_t PFC_startupflag;
@@ -60,6 +67,7 @@ extern uint16_t PFC_vAC_POS;            // 交流侧电压极性
 
 void PFC_initGlobalVariables(void);
 void PFC_Init(void);
+void PFC_checkOverFlow(void);
 
 ////////////////Notch filter and PR controllers//////////
 
@@ -135,7 +143,7 @@ inline void isr_lab3(void)
     
 }
 
-inline void isr_lab4(void)
+static inline void isr_lab4(void)
 {
     SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
 
@@ -162,8 +170,9 @@ static inline void isr_lab5(void)
         PFC_EDGE_POS = 0;
     }
     PFC_Vac = PFC_Vac_prev;
-
-    if(PFC_startupflag == 1) {  // 准备启动阶段
+    
+    // 准备启动，检测到过零开始发波
+    if(PFC_startupflag == 1) {  
 
         // 等待过零点
         if((PFC_vAC_sensed_Filtered > -0.01f) &&
@@ -172,6 +181,7 @@ static inline void isr_lab5(void)
         {
             PFC_updateDutyflag = 1; // 启动
             PFC_vAC_POS = 1;        // 正半周期
+            PFC_enable_gate = 1;    // 开半桥
         }
     }
 
@@ -179,14 +189,20 @@ static inline void isr_lab5(void)
 
         // 电压环
         PFC_vDC_loop_err = PFC_vDC_Ref_pu - PFC_vDC_sensed_pu_NOTCH;
-        PFC_iAC_Ref_pu = PFC_GV_RUN(&pfc_gv, PFC_vDC_loop_err,0);
+        PFC_GV_vDC_out = PFC_GV_RUN(&pfc_gv, PFC_vDC_loop_err,0);
+        PFC_iAC_Ref_pu = PFC_GV_vDC_out * PFC_PLL.sine;
 
         // 电流环
         PFC_iAC_loop_err = PFC_iAC_Ref_pu - PFC_iAC_sensed_pu;
-        PFC_Duty_pu = PFC_GI_RUN(&pfc_gi, PFC_iAC_loop_err);
+        PFC_GI_iAC_out = PFC_GI_RUN(&pfc_gi, PFC_iAC_loop_err);
+
+        // 前馈
+        PFC_Duty_pu = PFC_GI_iAC_out;   // 此处暂未加入前馈
 
         PFC_PWM_UpdateDuty();
     }
+    
+    //PFC_checkOverFlow();    // 检测溢出或掉电
 }
 
 static inline void PFC_isr(void)
