@@ -7,6 +7,13 @@
 
 void PFC_PWM_UpdateDuty(void)
 {
+    // UpDown模式以及实际调制模块输入范围为-1~1
+    uint32_t realPWMReriod_Uint = HRPWM_PERIOD_Uint / (2 * 2);
+
+    LL_HRTIM_TIM_SetCompare1(HRTIM1, PFC_PHASE_A_TIMER, 
+                             (uint32_t)(realPWMReriod_Uint * (PFC_Duty_pu + 1)));
+    LL_HRTIM_TIM_SetCompare1(HRTIM1, PFC_PHASE_B_TIMER,
+                             (uint32_t)(realPWMReriod_Uint * (-PFC_Duty_pu + 1)));  // B相反向
     
 }
 

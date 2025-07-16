@@ -28,6 +28,13 @@
 #define PFC_AC_FILTER_CONSTANT ((float32_t)0.1534f) // Ts x 2 x pi x fcut Cut off frequency of 12 kHz
 #define PFC_DC_FILTER_CONSTANT ((float32_t)0.1534f)
 
+
+// lab说明：
+// lab1：开环发波，用于测试驱动是否正常，下管给的占空比很低。不建议在交流或者直流端口施加电压，如果要加电，建议先测试直流，自行计算负载大小
+// lab2：半桥关闭，交流侧接入交流电，直流侧接入合适的负载。此时是被动整流模式，用于测试采样和锁相环是否正常。
+// lab3：直流侧接入电源，交流测接入适当负载，开环发SPWM波。用于测试PWM以及采样极性。
+// lab4：PFC模式，但是只运行电流环，请在直流侧接入合适的负载。用于调试电流环。
+// lab5：电压电流双闭环，正常运行。
 #define PFC_LAB 2
 
 #endif

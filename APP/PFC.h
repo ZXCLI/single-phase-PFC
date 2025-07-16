@@ -158,9 +158,10 @@ static inline void PFC_checkOverFlow(void)
     PFC_vDC_sensed = PFC_vDC_sensed_pu_NOTCH * PFC_VDC_MAX;
     PFC_iDC_sensed = PFC_iDC_sensed_pu_Filtered * PFC_IDC_MAX;
     
+    // TODO: 完善保护措施
     if(PFC_vDC_sensed > PFC_VDC_OVERVOLT_LIMIT)
     {
-        
+        PFC_HB_DISABLE;
     }
 }
 
@@ -177,6 +178,12 @@ static inline void isr_lab1(void)
 static inline void isr_lab2(void)
 {
     SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
+
+    // power measurement
+    PFC_PowerMeas.v = PFC_vAC_sensed_pu;
+    PFC_PowerMeas.i = PFC_iAC_sensed_pu;
+    POWER_MEAS_SINE_ANALYZER_run(&PFC_PowerMeas);
+    
     SEGGER_RTT_printf(0,"%d,%d,%d\n",(int)(PFC_PLL.sine*1000.0f),(int)(PFC_vAC_sensed_pu*1000.0f),(int)(PFC_iAC_sensed_pu*1000.0f));
 }
 
@@ -187,7 +194,13 @@ static inline void isr_lab3(void)
 
 static inline void isr_lab4(void)
 {
+    
     SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
+
+    //power measurement
+    PFC_PowerMeas.v = PFC_vAC_sensed_pu;
+    PFC_PowerMeas.i = PFC_iAC_sensed_pu;
+    POWER_MEAS_SINE_ANALYZER_run(&PFC_PowerMeas);
 
     // 电压上升检测
     PFC_Vac = PFC_vAC_sensed_pu_Filtered;
@@ -197,6 +210,36 @@ static inline void isr_lab4(void)
         PFC_EDGE_POS = 0;
     }
     PFC_Vac = PFC_Vac_prev;
+    
+    // 准备启动，检测到过零开始发波
+    if(PFC_startupflag == 1) {  
+
+        // 等待过零点
+        if((PFC_vAC_sensed_pu_Filtered > -0.01f) &&
+           (PFC_vAC_sensed_pu_Filtered < 0.01f) &&
+           (PFC_EDGE_POS == 1)) // 仅在第一次进入时生效
+        {
+            PFC_updateDutyflag = 1; // 启动
+            PFC_vAC_POS = 1;        // 正半周期
+            PFC_enable_gate = 1;    // 开半桥
+        }
+    }
+
+    if (PFC_updateDutyflag == 1) {
+
+        PFC_iAC_Ref_pu = 0.08f * PFC_PLL.sine;  // 0.08f对应约1.2A的峰值电流
+
+        // 电流环
+        PFC_iAC_loop_err = PFC_iAC_Ref_pu - PFC_iAC_sensed_pu;
+        PFC_GI_iAC_out = PFC_GI_RUN(&pfc_gi, PFC_iAC_loop_err);
+
+        // 前馈
+        PFC_Duty_pu = PFC_GI_iAC_out;   // 此处暂未加入前馈
+
+        PFC_PWM_UpdateDuty();
+    }
+    
+    PFC_checkOverFlow();    // 检测溢出或掉电
 }
 
 static inline void isr_lab5(void) 
@@ -281,7 +324,5 @@ static inline void PFC_isr(void)
     isr_lab5();
 #endif
 }
-
-
 
 #endif
