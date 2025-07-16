@@ -202,8 +202,7 @@ void SysTick_Handler(void)
 /**
   * @brief This function handles ADC1 and ADC2 global interrupt.
   */
-// __attribute__((section("ccmram")))
-  void ADC1_2_IRQHandler(void)
+void ADC1_2_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC1_2_IRQn 0 */
 

@@ -2,7 +2,11 @@
 #define PFC_HAL_H
 
 #include "DCLF32.h"
+#include "main.h"
 #include "math.h"
+
+#define PFC_HB_DISABLE HAL_GPIO_WritePin(GPIOA,GPIO_PIN_12,GPIO_PIN_SET)
+#define PFC_HB_ENABLE HAL_GPIO_WritePin(GPIOA,GPIO_PIN_12,GPIO_PIN_RESET)
 
 #define PFC_PHASE_A_TIMER LL_HRTIM_TIMER_B
 #define PFC_PHASE_B_TIMER LL_HRTIM_TIMER_C

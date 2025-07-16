@@ -1,6 +1,7 @@
 #ifndef PFC_H
 #define PFC_H
 
+#include "main.h"
 #include "PFC_setting.h"
 #include "PFC_parameter.h"
 #include "PFC_HAL.h"
@@ -8,6 +9,7 @@
 #include "SPLL_1PH_SOGI.h"
 #include "PFC_parameter.h"
 #include "power_meas_sine_analyzer.h"
+#include "SEGGER_RTT.h"
 
 #define PFC_GV DCL_PI
 #define PFC_GI DCL_DF22
@@ -164,19 +166,18 @@ static inline void PFC_checkOverFlow(void)
 
 inline void isr_lab1(void)
 {
-    // 正向过零检测
-    PFC_Vac = PFC_vAC_sensed_pu;
-    if (PFC_Vac - PFC_Vac_prev > 0.04f) {
-        PFC_EDGE_POS = 1;
-    } else {
-        PFC_EDGE_POS = 0;
-    }
-    PFC_Vac = PFC_Vac_prev;
+    // 输出使能
+    LL_HRTIM_EnableOutput(HRTIM1,    LL_HRTIM_OUTPUT_TB1
+                                    |LL_HRTIM_OUTPUT_TB2
+                                    |LL_HRTIM_OUTPUT_TC1
+                                    |LL_HRTIM_OUTPUT_TC2);
+    PFC_HB_ENABLE;
 }
 
 inline void isr_lab2(void)
 {
-    
+    SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
+    SEGGER_RTT_printf(0,"%f,%f\n",PFC_PLL.sine,PFC_vAC_sensed_pu);
 }
 
 inline void isr_lab3(void)

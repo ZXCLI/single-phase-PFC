@@ -106,12 +106,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
-    
-    // LL_HRTIM_TIM_SetCompare1(HRTIM1, LL_HRTIM_TIMER_C, test);
-    // test++;
-    // if (test > 24980) test = 1;
-    // HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }

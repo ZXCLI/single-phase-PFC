@@ -70,6 +70,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define GATE_DIS_Pin GPIO_PIN_12
+#define GATE_DIS_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 

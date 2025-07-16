@@ -28,6 +28,6 @@
 #define PFC_AC_FILTER_CONSTANT ((float32_t)0.1534f) // Ts x 2 x pi x fcut Cut off frequency of 12 kHz
 #define PFC_DC_FILTER_CONSTANT ((float32_t)0.1534f)
 
-#define PFC_LAB 5
+#define PFC_LAB 2
 
 #endif

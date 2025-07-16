@@ -55,6 +55,9 @@ void PFC_HAL_setupPWM(void)
     LL_HRTIM_DT_SetFallingValue(HRTIM1, PFC_PHASE_B_TIMER, 60);
     LL_HRTIM_DT_SetRisingValue(HRTIM1, PFC_PHASE_B_TIMER, 60);
 
+    // 关闭所有半桥
+    PFC_HB_DISABLE;
+
     // 输出使能
     // LL_HRTIM_EnableOutput(HRTIM1,    LL_HRTIM_OUTPUT_TB1
     //                                 |LL_HRTIM_OUTPUT_TB2
