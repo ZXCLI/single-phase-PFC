@@ -15,7 +15,7 @@ void PFC_HAL_setupADC(void)
 
     /*
      * ADC1-3 直流电压 / ADC2-4 直流电流
-     * ADC2-5 交流电流 / ADC2-12 交流电压
+     * ADC2-5 交流电流 / ADC2-11 交流电压
      */
 
     // 校准ADC

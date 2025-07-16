@@ -99,7 +99,7 @@ void PFC_initGlobalVariables(void)
 
     // 
     PFC_vAC_offset_pu = 0.496668;   // 1.490006V
-    PFC_iAC_offset_pu = 0.504078;   // 1.512234V
+    PFC_iAC_offset_pu = 0.488;   // 1.512234V
 
     // 初始化环路参数
     PFC_iAC_sensed_pu = 0.0f;

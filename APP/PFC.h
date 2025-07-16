@@ -133,7 +133,7 @@ static inline void PFC_readCurrentAndVoltageSignals(void)
 {
     // 读取注入组的ADC值，然后归一化
     PFC_vAC_sensed_pu = (PFC_VAC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_vAC_offset_pu) * 2.0f;
-    PFC_iAC_sensed_pu = (PFC_VAC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu) * 2.0f;
+    PFC_iAC_sensed_pu = (PFC_IAC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu) * 2.0f;
     PFC_vDC_sensed_pu = (PFC_VDC_READ * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu);
     PFC_iDC_sensed_pu = (PFC_iDC_sensed_pu * PFC_ADC_PU_SCALE_FACTOR - PFC_iAC_offset_pu) * 2.0f;
 
@@ -164,7 +164,7 @@ static inline void PFC_checkOverFlow(void)
     }
 }
 
-inline void isr_lab1(void)
+static inline void isr_lab1(void)
 {
     // 输出使能
     LL_HRTIM_EnableOutput(HRTIM1,    LL_HRTIM_OUTPUT_TB1
@@ -174,13 +174,13 @@ inline void isr_lab1(void)
     PFC_HB_ENABLE;
 }
 
-inline void isr_lab2(void)
+static inline void isr_lab2(void)
 {
     SPLL_1PH_SOGI_run(&PFC_PLL, PFC_vAC_sensed_pu);
-    SEGGER_RTT_printf(0,"%f,%f\n",PFC_PLL.sine,PFC_vAC_sensed_pu);
+    SEGGER_RTT_printf(0,"%d,%d,%d\n",(int)(PFC_PLL.sine*1000.0f),(int)(PFC_vAC_sensed_pu*1000.0f),(int)(PFC_iAC_sensed_pu*1000.0f));
 }
 
-inline void isr_lab3(void)
+static inline void isr_lab3(void)
 {
     
 }
